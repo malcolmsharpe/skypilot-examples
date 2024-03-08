@@ -1,0 +1,15 @@
+{# Concatenate the initial system and user messages. -#}
+{% set ns = namespace(split_index=messages|length, contents=[]) -%}
+{% for m in messages -%}
+    {% if m['role'] == 'assistant' and ns.split_index == messages|length -%}
+        {% set ns.split_index = loop.index0 -%}
+    {% endif -%}
+{% endfor -%}
+
+{% for m in messages[:ns.split_index] -%}
+    {% set ns.contents = ns.contents + [m['content']] -%}
+{% endfor -%}
+{% set messages = [{'role': 'user', 'content': '\n\n'.join(ns.contents)}] + messages[ns.split_index:] -%}
+
+{# Mistral's provided chat_template, except omit bos_token, since vLLM adds it. -#}
+{% for message in messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if message['role'] == 'user' %}{{ '[INST] ' + message['content'] + ' [/INST]' }}{% elif message['role'] == 'assistant' %}{{ message['content'] + eos_token}}{% else %}{{ raise_exception('Only user and assistant roles are supported!') }}{% endif %}{% endfor %}

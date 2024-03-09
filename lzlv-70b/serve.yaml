@@ -1,0 +1,19 @@
+# A task to serve lizpreciatior/lzlv_70b_fp16_hf, derived from skypilot's mixtral example.
+resources:
+    accelerators: A40:4
+    disk_tier: best
+
+setup: |
+    conda create -n skypilot -y python=3.10
+    conda activate skypilot
+    pip install transformers==4.38.0
+    pip install vllm==0.3.2
+
+run: |
+    conda activate skypilot
+    python -u -m vllm.entrypoints.openai.api_server \
+        --host 127.0.0.1 \
+        --model lizpreciatior/lzlv_70b_fp16_hf \
+        --disable-log-stats \
+        --disable-log-requests \
+        --tensor-parallel-size $SKYPILOT_NUM_GPUS_PER_NODE | tee ~/openai_api_server.log
